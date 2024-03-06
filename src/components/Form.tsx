@@ -13,15 +13,7 @@ const clearLocalStorageInAllTabs = () => {
 }
 
 export const Form = () => {
-  const {
-    control,
-    handleSubmit,
-    getValues,
-    setValue,
-    register,
-    reset,
-    formState: { isSubmitSuccessful },
-  } = useFormContext<IForm>()
+  const { control, handleSubmit, getValues, setValue, register, reset } = useFormContext<IForm>()
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -32,7 +24,7 @@ export const Form = () => {
     const updateDataFromStorage = () => {
       const localData = JSON.parse(localStorage.getItem(localKey))
 
-      if (!localData || isSubmitSuccessful) return
+      if (!localData) return
 
       reset(localData)
     }
@@ -74,7 +66,7 @@ export const Form = () => {
   useEffect(() => {
     const handleClearEvent = (event: StorageEvent) => {
       if (event.key === 'clearLocalStorage') {
-        // reset(defaultValues)
+        // reset(defaultValues) /* uncomment if need reset */
         localStorage.removeItem(localKey)
       }
     }
@@ -88,7 +80,7 @@ export const Form = () => {
 
   const submitForm = (data: IForm) => {
     clearLocalStorageInAllTabs()
-    // reset(defaultValues)
+    // reset(defaultValues) /* uncomment if need reset */
     console.log(data)
   }
 
