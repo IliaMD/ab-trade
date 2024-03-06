@@ -1,27 +1,20 @@
 import React from 'react'
 import { Box, TextField, Button } from '@mui/material'
-import { IForm } from '../types'
-import { FieldErrors, UseFormRegister } from 'react-hook-form'
-import { useFormContext } from '../store/FormProvider'
+import { useFormContext } from 'react-hook-form'
 
 type ProductProps = {
-  register: UseFormRegister<IForm>
-  errors: FieldErrors<IForm>
   groupIndex: number
   productIndex: number
   calcProductSum: (value: number, field: 'count' | 'price', groupIndex: number, productIndex: number) => void
   onDeleteProduct: () => void
 }
 
-export const Product = ({
-  register,
-  errors,
-  groupIndex,
-  productIndex,
-  calcProductSum,
-  onDeleteProduct,
-}: ProductProps) => {
-  const { handleFormChange } = useFormContext()
+export const Product = React.memo(({ groupIndex, productIndex, calcProductSum, onDeleteProduct }: ProductProps) => {
+  const {
+    register,
+    setValue,
+    formState: { errors },
+  } = useFormContext()
 
   return (
     <Box sx={{ display: 'flex', gap: '10px' }}>
@@ -39,7 +32,7 @@ export const Product = ({
         })}
         error={!!errors.groups?.[groupIndex]?.products?.[productIndex]?.name}
         helperText={errors.groups?.[groupIndex]?.products?.[productIndex]?.name?.message}
-        inputProps={{ onChange: e => handleFormChange(true) }}
+        onChange={e => setValue(`groups.${groupIndex}.products.${productIndex}.name`, e.target.value)}
         sx={{ flex: 1 }}
       />
 
@@ -76,4 +69,4 @@ export const Product = ({
       </Button>
     </Box>
   )
-}
+})

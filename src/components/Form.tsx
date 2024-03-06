@@ -2,17 +2,10 @@ import React, { useEffect } from 'react'
 import { Group } from './Group'
 import { Box, Button, TextField } from '@mui/material'
 import { v4 as uuidv4 } from 'uuid'
-import { UseFormSetValue, useFieldArray, useForm } from 'react-hook-form'
+import { useFieldArray, useFormContext } from 'react-hook-form'
 import { IForm, IGroup } from '../types'
 import { formatToTwoDecimals } from '../helpers'
-import { useFormContext } from '../store/FormProvider'
-
-const defaultValues = {
-  sum: 0,
-  groups: [{ id: uuidv4(), sum: 0, products: [{ id: uuidv4(), name: '', sum: 0, count: 0, price: 0 }] }],
-}
-
-const localKey = 'formData'
+import { localKey } from './FormProvider'
 
 const clearLocalStorageInAllTabs = () => {
   localStorage.setItem('clearLocalStorage', Date.now() + '')
@@ -20,41 +13,28 @@ const clearLocalStorageInAllTabs = () => {
 }
 
 export const Form = () => {
-  const getLocalData = React.useMemo(() => JSON.parse(localStorage.getItem(localKey)) || defaultValues, [])
-
   const {
     control,
     handleSubmit,
     getValues,
     setValue,
     register,
-    watch,
     reset,
-    formState: { errors, isSubmitSuccessful },
-  } = useForm<IForm>({ defaultValues: getLocalData })
-
-  const { formChanged, handleFormChange } = useFormContext()
+    formState: { isSubmitSuccessful },
+  } = useFormContext<IForm>()
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'groups',
   })
 
-  const allChanges = watch()
-
-  useEffect(() => {
-    if (formChanged) {
-      localStorage.setItem(localKey, JSON.stringify(allChanges))
-    }
-  }, [formChanged, allChanges])
-
   useEffect(() => {
     const updateDataFromStorage = () => {
       const localData = JSON.parse(localStorage.getItem(localKey))
 
-      if (!isSubmitSuccessful && !formChanged) {
-        reset(localData)
-      }
+      if (!localData || isSubmitSuccessful) return
+
+      reset(localData)
     }
 
     window.addEventListener('storage', updateDataFromStorage)
@@ -62,7 +42,12 @@ export const Form = () => {
     return () => {
       window.removeEventListener('storage', updateDataFromStorage)
     }
-  }, [reset, isSubmitSuccessful, formChanged])
+  }, [reset])
+
+  useEffect(() => {
+    const localData = JSON.parse(localStorage.getItem(localKey))
+    reset(localData)
+  }, [reset])
 
   const handleDeleteGroup = React.useCallback(
     (groupIndex: number) => {
@@ -81,15 +66,15 @@ export const Form = () => {
   )
 
   const handleAddGroup = React.useCallback(() => {
-    append({ id: uuidv4(), sum: 0, products: [] })
-    handleFormChange(true)
-  }, [append, handleFormChange])
+    const groups = getValues('groups')
+    append({} as IGroup)
+    setValue(`groups.${groups.length}`, { id: uuidv4(), sum: 0, products: [] })
+  }, [append, setValue, getValues])
 
   useEffect(() => {
     const handleClearEvent = (event: StorageEvent) => {
       if (event.key === 'clearLocalStorage') {
-        handleFormChange(false)
-        reset(defaultValues)
+        // reset(defaultValues)
         localStorage.removeItem(localKey)
       }
     }
@@ -99,11 +84,11 @@ export const Form = () => {
     return () => {
       window.removeEventListener('storage', handleClearEvent)
     }
-  }, [handleFormChange, reset])
+  }, [reset])
 
   const submitForm = (data: IForm) => {
     clearLocalStorageInAllTabs()
-    reset(defaultValues)
+    // reset(defaultValues)
     console.log(data)
   }
 
@@ -123,20 +108,11 @@ export const Form = () => {
     [getValues, setValue],
   )
 
-  const onSetValue: UseFormSetValue<IForm> = React.useCallback(
-    (name, value: any) => {
-      setValue(name, value)
-      handleFormChange(true)
-    },
-    [setValue, handleFormChange],
-  )
-
   return (
     <Box
       component={'form'}
       sx={{ display: 'flex', flexDirection: 'column', margin: '10px 10px' }}
       onSubmit={handleSubmit(submitForm)}
-      onChange={() => handleFormChange(true)}
     >
       <h2>Форма</h2>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -150,11 +126,7 @@ export const Form = () => {
           >
             <h4>Группа {groupIndex + 1}</h4>
             <Group
-              register={register}
-              control={control}
-              getValues={getValues}
-              setValue={onSetValue}
-              errors={{ ...errors }}
+              key={group.id}
               groupIndex={groupIndex}
               calcTotalSum={calcTotalSum}
               onDeleteGroup={() => handleDeleteGroup(groupIndex)}
@@ -169,6 +141,7 @@ export const Form = () => {
         InputProps={{
           readOnly: true,
         }}
+        defaultValue={0}
         sx={{ my: 2 }}
       />
 

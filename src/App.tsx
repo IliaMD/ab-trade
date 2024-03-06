@@ -1,7 +1,7 @@
 import React from 'react'
 import { Counter } from './components/Counter'
 import { Form } from './components/Form'
-import FormProvider from './store/FormProvider'
+import { FormProviderContainer } from './components/FormProvider'
 
 import './App.css'
 
@@ -10,9 +10,9 @@ function App() {
     <>
       <Counter />
       <br />
-      <FormProvider>
+      <FormProviderContainer>
         <Form />
-      </FormProvider>
+      </FormProviderContainer>
     </>
   )
 }

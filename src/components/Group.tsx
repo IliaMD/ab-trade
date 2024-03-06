@@ -1,41 +1,19 @@
 import React from 'react'
 import { Box, Button, TextField } from '@mui/material'
 import { Product } from './Product'
-import { IForm, IProduct } from '../types'
+import { IProduct } from '../types'
 import { v4 as uuidv4 } from 'uuid'
-import {
-  Control,
-  FieldErrors,
-  UseFormGetValues,
-  UseFormRegister,
-  UseFormSetValue,
-  useFieldArray,
-} from 'react-hook-form'
+import { useFieldArray, useFormContext } from 'react-hook-form'
 import { formatToTwoDecimals } from '../helpers'
-import { useFormContext } from '../store/FormProvider'
 
 type GroupProps = {
-  control: Control<IForm>
-  register: UseFormRegister<IForm>
-  setValue: UseFormSetValue<IForm>
-  getValues: UseFormGetValues<IForm>
-  errors: FieldErrors<IForm>
   groupIndex: number
   calcTotalSum: (value: number, index: number) => void
   onDeleteGroup: () => void
 }
 
-export const Group = ({
-  control,
-  register,
-  setValue,
-  getValues,
-  errors,
-  groupIndex,
-  calcTotalSum,
-  onDeleteGroup,
-}: GroupProps) => {
-  const { handleFormChange } = useFormContext()
+export const Group = React.memo(({ groupIndex, calcTotalSum, onDeleteGroup }: GroupProps) => {
+  const { control, setValue, register, getValues } = useFormContext()
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -43,9 +21,10 @@ export const Group = ({
   })
 
   const handleAddProduct = React.useCallback(() => {
-    append({ id: uuidv4(), name: '', sum: 0, count: 0, price: 0 })
-    handleFormChange(true)
-  }, [append, handleFormChange])
+    const products = getValues(`groups.${groupIndex}.products`)
+    append({} as IProduct)
+    setValue(`groups.${groupIndex}.products.${products.length}`, { id: uuidv4(), name: '', sum: 0, count: 0, price: 0 })
+  }, [append, setValue, getValues, groupIndex])
 
   const calcGroupSum = React.useCallback(
     (groupIndex: number, products: IProduct[]): number => {
@@ -103,8 +82,6 @@ export const Group = ({
       {fields.map((product, productIndex) => (
         <Product
           key={product.id}
-          register={register}
-          errors={{ ...errors }}
           productIndex={productIndex}
           groupIndex={groupIndex}
           onDeleteProduct={() => handleDeleteProduct(productIndex)}
@@ -119,4 +96,4 @@ export const Group = ({
       </Box>
     </Box>
   )
-}
+})
